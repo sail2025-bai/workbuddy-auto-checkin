@@ -1,6 +1,6 @@
-# 本机工具不推到云端仓库
-signin.py
-export_token.py
-deploy_github.py
+# 缓存与日志不推到云端仓库
 __pycache__/
 *.log
+
+# scripts/ 为 workbuddy-auto-checkin 技能完整封装（含本机解密/导出/部署脚本），
+# 需随技能一起提交，便于新机器直接克隆复用。
