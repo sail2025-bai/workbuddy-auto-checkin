@@ -32,6 +32,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Run checkin
+        continue-on-error: true
         env:
           WB_ACCESS_TOKEN: ${{ secrets.WB_ACCESS_TOKEN }}
           WB_USER_ID: ${{ secrets.WB_USER_ID }}
