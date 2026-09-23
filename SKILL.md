@@ -40,7 +40,7 @@ WorkBuddy「Buddy 加油站」每日签到 = 带登录态 Token 的一次 HTTP �
      - `Secrets` = Read and write（写 4 个 Secret）
      - `Workflows` = Read and write（触发验证）
      - `Administration` = Read and write（保险）
-   - 有效期建议 **30 天**：部署完成并验证通过后即可吊销，因为运行时只依赖仓库 Secrets，不依赖这个 token。
+   - 有效期建议 **设到最长（fine-grained 上限 1 年）**：这个 PAT **既是部署凭证，也是后续每次续期（刷新 Secrets）的凭证**——`refresh_secret.py` 更新 Secret 同样需要 `Secrets: write`。**不要部署完就吊销**，否则每次续期（约每 25 天一次）都得重新生成一个 PAT。等 PAT 自身过期后，再到 GitHub 网页重新生成一个即可。
    - 安全：token 明文只在此处生成一次，别外传、别提交代码。把它直接粘贴给 AI 会话即可，脚本只在进程环境变量里用，不落盘、不回显。
    - **注意**：PAT 必须由你本人在 GitHub 网页生成后提供；技能本身无法替你创建 PAT（那需要你的 GitHub 登录态）。
 
@@ -93,6 +93,7 @@ env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
 ### 维护（唯一本机底线）
 
 - **accessToken 约 30 天寿命**。到期前 ~25 天，本机执行（需 `GITHUB_TOKEN` + 客户端已登录）：
+  > 续期必须持有 `Secrets: write` 凭证（fine-grained PAT / classic PAT / GitHub App 安装令牌均可），因为 GitHub **禁止内置 `GITHUB_TOKEN` 读写仓库 Secret**，工作流无法自己更新自己的 Secret。这是半云端设计里绕不开的本机底线。
   ```bash
   cd <SKILL>/scripts
   env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
