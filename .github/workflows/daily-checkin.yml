@@ -1,6 +1,7 @@
-# WorkBuddy 每日自动签到 · GitHub Actions 工作流
+# WorkBuddy 每日自动签到 + 成长中心 · GitHub Actions 工作流
 # 部署方式：把本文件放到你的【私有】GitHub 仓库的 .github/workflows/ 目录下，
-#          把 cloud_signin.py 放到仓库根目录（或调整下面的 run 路径），
+#          把 cloud_signin.py 与 cloud_growth.py 放到仓库根目录（或调整下面的 run 路径），
+#          scripts/signin.py 随仓库一起存在（cloud_growth.py 复用其中的 run_growth 逻辑），
 #          在仓库 Settings → Secrets and variables → Actions 中新增 3~4 个 Secret：
 #            WB_ACCESS_TOKEN     （由本机 export_token.py 导出）
 #            WB_USER_ID
@@ -11,8 +12,10 @@
 #   - GitHub 会在仓库 60 天无 commit 活动时自动禁用 scheduled 定时任务，
 #     需偶尔 push 一下或手动重新启用（Actions 页有提示）。
 #   - cron 使用 UTC。下面是北京 09:00 与 21:00（UTC 01:00 / 13:00）。
+#   - 两步顺序：先签到（拿每日积分），再成长中心（任务/抽奖/兑换/补登/Buddy 旅行）。
+#     成长中心为写操作，但均带幂等/防重放保护，重复运行安全。
 
-name: WorkBuddy 每日签到
+name: WorkBuddy 每日签到 + 成长中心
 
 on:
   schedule:
@@ -20,7 +23,7 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  checkin:
+  workbuddy:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -35,3 +38,10 @@ jobs:
           WB_DOMAIN: ${{ secrets.WB_DOMAIN }}
           WB_ENTERPRISE_ID: ${{ secrets.WB_ENTERPRISE_ID }}
         run: python cloud_signin.py
+      - name: Run growth center
+        env:
+          WB_ACCESS_TOKEN: ${{ secrets.WB_ACCESS_TOKEN }}
+          WB_USER_ID: ${{ secrets.WB_USER_ID }}
+          WB_DOMAIN: ${{ secrets.WB_DOMAIN }}
+          WB_ENTERPRISE_ID: ${{ secrets.WB_ENTERPRISE_ID }}
+        run: python cloud_growth.py

@@ -19,6 +19,7 @@ WorkBuddy「Buddy 加油站」每日签到 = 带登录态 Token 的一次 HTTP �
 | `signin.py` | 第三方 `88lin/workbuddy-auto-signin` 主脚本，借客户端原生接口解密登录态 | 本机 |
 | `export_token.py` | 本机导出脚本，import signin.py 复用解密逻辑，输出明文凭证 JSON | 本机（每 ~25 天一次） |
 | `cloud_signin.py` | 云端签到脚本，纯标准库，读 4 个环境变量直接签，**不依赖本机客户端** | GitHub Actions runner |
+| `cloud_growth.py` | 云端成长中心脚本，复用 `signin.run_growth`（任务/抽奖/兑换/补登卡/Buddy 旅行/Buddy 盲盒/能量），**不重写、不依赖本机客户端** | GitHub Actions runner |
 | `deploy_github.py` | GitHub 一键部署：建私有仓库 → 加密写 4 个 Secret → 推送 → 触发验证 | 本机（一次） |
 | `daily-checkin.yml` | GitHub Actions 工作流模板（北京 09:00 / 21:00） | 推到仓库 `.github/workflows/` |
 | `refresh_secret.py` | 仅刷新仓库 Secrets（不碰代码），用于 token 过期后续期 | 本机（每 ~25 天一次） |
@@ -79,16 +80,16 @@ env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy \
   GITHUB_TOKEN='<github_pat_...>' .venv/bin/python deploy_github.py
 ```
 
-`deploy_github.py` 自动完成：本机解密导出 token → 建私有仓库（已存在则跳过）→ 推送 `cloud_signin.py` + 工作流 → 用仓库公钥（libsodium sealed box）加密写 4 个 Secret → 触发首次验证。token 仅内存、不回显。
+`deploy_github.py` 自动完成：本机解密导出 token → 建私有仓库（已存在则跳过）→ 推送 `cloud_signin.py` + `cloud_growth.py` + 工作流 → 用仓库公钥（libsodium sealed box）加密写 4 个 Secret → 触发首次验证。token 仅内存、不回显。
 
 **PAT 权限要求**见上方「〇、新机器前置」第 2 步（`Contents`/`Secrets`/`Workflows`/`Administration` 读写 + All repositories）。
 
 ### 手动部署（备选）
 
-1. 将 `cloud_signin.py` + `daily-checkin.yml`（yml 放 `.github/workflows/`）推到【私有】仓库；
+1. 将 `cloud_signin.py` + `cloud_growth.py` + `daily-checkin.yml`（yml 放 `.github/workflows/`）推到【私有】仓库；
 2. 本机 `python3 export_token.py`，复制输出 JSON；
 3. 仓库 Settings → Secrets → Actions 新增 `WB_ACCESS_TOKEN` / `WB_USER_ID` / `WB_DOMAIN` / `WB_ENTERPRISE_ID`（个人账号末项留空）；
-4. 手动跑一次 `workflow_dispatch` 验证；之后每天北京 09:00 / 21:00 自动签。
+4. 手动跑一次 `workflow_dispatch` 验证；之后每天北京 09:00 / 21:00 自动签 + 成长中心（任务/抽奖/兑换/补登卡/Buddy 旅行/Buddy 盲盒）。
 
 ### 维护（唯一本机底线）
 
